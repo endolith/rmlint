@@ -108,11 +108,7 @@ def test_bad_arguments():
     path_a = create_file('1234', 'a')
     path_b = create_file('1234', 'b')
     path_c = create_file('1234', 'c')
-    for paths in [
-            path_a,
-            ' '.join((path_a, path_b, path_c)),
-            ' '.join((path_a, path_a + ".nonexistent"))
-    ]:
+    for paths in [path_a, ' '.join((path_a, path_b, path_c)), ' '.join((path_a, f"{path_a}.nonexistent"))]:
         with assert_exit_code(1):
             run_rmlint(
                 '--dedupe',

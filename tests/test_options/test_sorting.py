@@ -57,14 +57,14 @@ def validate_order(data, tests):
 @with_setup(usual_setup_func, usual_teardown_func)
 def test_sorting():
     # create some dupes with different PATHS, names and mtimes:
-    create_file('xxx', PATHS[1] + 'a', mtime='2004-02-29  16:21:42.4')
-    create_file('xxx', PATHS[0] + 'c', mtime='2004-02-29  16:21:42.6')
-    create_file('xxx', PATHS[2] + 'B', mtime='2004-02-29  16:21:43.1')
-    create_file('xxx', PATHS[2] + 'b', mtime='2004-02-29  16:21:43.0')
-    create_file('xxx', PATHS[1] + 'c', mtime='2004-02-29  16:21:41.5')
-    create_file('xxx', PATHS[2] + 'c', mtime='2004-02-29  16:21:41.0')
+    create_file('xxx', f'{PATHS[1]}a', mtime='2004-02-29  16:21:42.4')
+    create_file('xxx', f'{PATHS[0]}c', mtime='2004-02-29  16:21:42.6')
+    create_file('xxx', f'{PATHS[2]}B', mtime='2004-02-29  16:21:43.1')
+    create_file('xxx', f'{PATHS[2]}b', mtime='2004-02-29  16:21:43.0')
+    create_file('xxx', f'{PATHS[1]}c', mtime='2004-02-29  16:21:41.5')
+    create_file('xxx', f'{PATHS[2]}c', mtime='2004-02-29  16:21:41.0')
 
-    joiner = ' ' + TESTDIR_NAME + '/'
+    joiner = f' {TESTDIR_NAME}/'
     search_paths = joiner + joiner.join(PATHS)
 
     opts = 'ampdl'
@@ -82,7 +82,7 @@ def test_sorting():
         )
 
     for combo in combos:
-        combo_str = '-S ' + combo
+        combo_str = f'-S {combo}'
         head, *data, footer = run_rmlint(combo_str + search_paths, use_default_dir=False)
         assert len(data) == 6
 
@@ -113,17 +113,17 @@ def test_sort_by_outlyer():
 @with_setup(usual_setup_func, usual_teardown_func)
 def test_sort_by_outlyer_hardcore():
     for suffix in 'ABCD':
-        create_file('xxx', 'inside/foo' + suffix)
+        create_file('xxx', f'inside/foo{suffix}')
 
     create_dirs('outside')
 
     # fooA:
     for i in range(2, 6):
-        create_link('inside/fooA', 'inside/fooA_link_' + str(i))
+        create_link('inside/fooA', f'inside/fooA_link_{str(i)}')
 
     # fooB:
     for i in range(2, 5):
-        create_link('inside/fooB', 'inside/fooB_link_' + str(i))
+        create_link('inside/fooB', f'inside/fooB_link_{str(i)}')
     create_link('inside/fooB', 'outside/fooB_link_5')
 
     # fooC:
@@ -179,11 +179,11 @@ def test_sort_by_regex_bad_input():
     create_file('xxx', 'aaab')
 
     # Should work:
-    run_rmlint("-S '{}'".format('r<.>' * 8))
+    run_rmlint(f"-S '{'r<.>' * 8}'")
 
     # More than 8 is bad:
     try:
-        run_rmlint("-S '{}'".format('r<.>' * 9))
+        run_rmlint(f"-S '{'r<.>' * 9}'")
         assert False
     except subprocess.CalledProcessError:
         pass

@@ -52,7 +52,7 @@ def test_combinations():
     assert footer['duplicates'] == 3
 
     for perm_opt, dupes in zip('rwx', (3, 1, 1)):
-        head, *data, footer = run_rmlint('--perms ' + perm_opt)
+        head, *data, footer = run_rmlint(f'--perms {perm_opt}')
         assert footer['duplicate_sets'] == 1
         assert footer['ignored_files'] == 4
         assert footer['total_files'] == files_created - 4
@@ -65,7 +65,7 @@ def test_combinations():
     assert footer['duplicates'] == 0
 
     for perm_opt, dupes in zip(["rw", "rx", "wx"], (1, 1, 0)):
-        head, *data, footer = run_rmlint('--perms ' + perm_opt)
+        head, *data, footer = run_rmlint(f'--perms {perm_opt}')
         assert footer['duplicate_sets'] == dupes
         assert footer['ignored_files'] == 6
         assert footer['total_files'] == files_created - 6

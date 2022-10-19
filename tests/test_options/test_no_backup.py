@@ -19,7 +19,7 @@ def test_backup():
         test_path = os.path.join(temp_dir, "xxx.json")
 
         for _ in range(10):
-            _, *data, _ = run_rmlint("-o json:" + test_path, outputs=[])
+            _, *data, _ = run_rmlint(f"-o json:{test_path}", outputs=[])
             assert len(data) == 2
 
         for path in os.listdir(temp_dir):

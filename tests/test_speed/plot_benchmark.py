@@ -47,7 +47,7 @@ def unpack(chart, data, bench_name, add_x_labels=True):
 
     n_runs = data['metadata']['n_runs']
     if add_x_labels:
-        labels = ['Run #' + str(i + 1) for i in range(n_runs)]
+        labels = [f'Run #{str(i + 1)}' for i in range(n_runs)]
         chart.x_labels = labels + ['Average']
 
     for program in sorted(data['programs']):
@@ -56,9 +56,10 @@ def unpack(chart, data, bench_name, add_x_labels=True):
         if len(result["numbers"]) < n_runs:
             continue
 
-        points = []
-        for key in [str(run + 1) for run in range(n_runs)] + ['average']:
-            points.append(result['numbers'][key])
+        points = [
+            result['numbers'][key]
+            for key in [str(run + 1) for run in range(n_runs)] + ['average']
+        ]
 
         yield program, result, points
 
@@ -72,17 +73,15 @@ def format_tooltip(program, version):
 
 def _plot_generic(data, chart, name, key):
     for program, metadata, points in unpack(chart, data, name):
-        numbers = []
-
-        for point in points:
-            numbers.append({
+        numbers = [
+            {
                 'value': round(key(point), 3),
-                'label': format_tooltip(
-                    program,
-                    metadata['version']
-                ),
-                'xlink': metadata.get('website')
-            })
+                'label': format_tooltip(program, metadata['version']),
+                'xlink': metadata.get('website'),
+            }
+            for point in points
+        ]
+
 
         chart.add(program, numbers)
 
@@ -167,7 +166,7 @@ def parse_arguments():
 def guess_output_dir(input_dir):
     if input_dir.startswith('bench-'):
         _, stamp = input_dir.split('-', 1)
-        return 'plot-' + stamp
+        return f'plot-{stamp}'
 
     return 'plot-output'
 
@@ -196,8 +195,9 @@ def main():
 
                 output_path = os.path.join(
                     options.output_dir,
-                    attr + '-' + os.path.basename(path) + suffix
+                    f'{attr}-{os.path.basename(path)}{suffix}',
                 )
+
 
                 print('Writing:', output_path)
                 with open(output_path, 'w') as handle:

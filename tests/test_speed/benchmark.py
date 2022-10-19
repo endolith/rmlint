@@ -114,10 +114,7 @@ class Program:
         return temp_dir
 
     def get_website(self):
-        if self.website:
-            return self.website
-        else:
-            return 'https://www.google.de/search?q=' + self.get_name()
+        return self.website or f'https://www.google.de/search?q={self.get_name()}'
 
     def run(self, dataset):
         """Run the program on a given dataset
@@ -126,7 +123,7 @@ class Program:
         memory_usage = -1
 
         paths = dataset.get_paths()
-        bin_cmd = self.binary_path + ' ' + self.get_options(paths)
+        bin_cmd = f'{self.binary_path} {self.get_options(paths)}'
 
         print('== Executing: {c}'.format(c=bin_cmd))
 
@@ -138,7 +135,7 @@ class Program:
                 flush_fs_caches()
 
                 for run_idx in range(1, CFG.n_runs + 1):
-                    print('.. Doing run #' + str(run_idx))
+                    print(f'.. Doing run #{str(run_idx)}')
                     start_time = time.time()
                     data_dump = subprocess.check_output(
                         time_cmd,
@@ -161,8 +158,7 @@ class Program:
                         run_benchmarks[run_idx][2] = peak_mem / 1024  # Megabyte
 
                     if data_dump:
-                        stats = self.parse_statistics(data_dump)
-                        if stats:
+                        if stats := self.parse_statistics(data_dump):
                             run_benchmarks[run_idx][3] = stats['dupes']
                             run_benchmarks[run_idx][4] = stats['sets']
 
@@ -173,7 +169,7 @@ class Program:
 
         avg_point = [0] * 5
         for idx in range(5):
-            avg_point[idx] = sum([v[idx] for v in run_benchmarks.values()])
+            avg_point[idx] = sum(v[idx] for v in run_benchmarks.values())
             avg_point[idx] /= CFG.n_runs
 
         print('== Took avg time of {t}s / {c}% cpu'.format(
@@ -199,7 +195,7 @@ class Program:
         self.binary_path = os.path.abspath(self.get_binary())
 
         if os.path.exists(temp_bin):
-            print('-- Path exists: ' + temp_bin)
+            print(f'-- Path exists: {temp_bin}')
             print('-- Skipping install; Delete if you need an update.')
             self.guess_version()
             os.chdir(current_path)
@@ -241,14 +237,12 @@ class Rmlint(Program):
 
     def compute_version(self):
         version_text = subprocess.check_output(
-            self.get_binary() + ' --version', shell=True, stderr=subprocess.STDOUT
+            f'{self.get_binary()} --version', shell=True, stderr=subprocess.STDOUT
         )
 
-        match = re.search('(\d.\d.\d) .*(rev [0-9a-f]{7})', str(version_text))
-        if match is not None:
-            return ' '.join(match.groups())
 
-        return ""
+        match = re.search('(\d.\d.\d) .*(rev [0-9a-f]{7})', str(version_text))
+        return ' '.join(match.groups()) if match is not None else ""
 
     def parse_statistics(self, _):
         try:
@@ -275,7 +269,7 @@ class RmlintSpot(Rmlint):
 
 class RmlintSpotParanoid(RmlintSpot):
     def get_options(self, paths):
-        return '-p ' + RmlintSpot.get_options(self, paths)
+        return f'-p {RmlintSpot.get_options(self, paths)}'
 
     def get_benchid(self):
         return 'rmlint-spot-paranoid'
@@ -304,10 +298,10 @@ class Rmlint246(Rmlint):
 
 class Rmlint222Paranoid(Rmlint222):
     def get_options(self, paths):
-        return '-p ' + Rmlint222.get_options(self, paths)
+        return f'-p {Rmlint222.get_options(self, paths)}'
 
     def get_benchid(self):
-        return Rmlint222.get_benchid(self) + '-paranoid'
+        return f'{Rmlint222.get_benchid(self)}-paranoid'
 
 
 class RmlintMaster(Rmlint):
@@ -322,7 +316,7 @@ class RmlintMaster(Rmlint):
 
 class RmlintSpooky(Rmlint):
     def get_options(self, paths):
-        return '-a spooky ' + Rmlint.get_options(self, paths)
+        return f'-a spooky {Rmlint.get_options(self, paths)}'
 
     def get_benchid(self):
         return 'rmlint-spooky'
@@ -330,7 +324,7 @@ class RmlintSpooky(Rmlint):
 
 class RmlintXXHash(Rmlint):
     def get_options(self, paths):
-        return '-a xxhash ' + Rmlint.get_options(self, paths)
+        return f'-a xxhash {Rmlint.get_options(self, paths)}'
 
     def get_benchid(self):
         return 'rmlint-xxhash'
@@ -338,7 +332,7 @@ class RmlintXXHash(Rmlint):
 
 class RmlintCity(Rmlint):
     def get_options(self, paths):
-        return '-a city ' + Rmlint.get_options(self, paths)
+        return f'-a city {Rmlint.get_options(self, paths)}'
 
     def get_benchid(self):
         return 'rmlint-city'
@@ -346,7 +340,7 @@ class RmlintCity(Rmlint):
 
 class RmlintMD5(Rmlint):
     def get_options(self, paths):
-        return '-a md5 ' + Rmlint.get_options(self, paths)
+        return f'-a md5 {Rmlint.get_options(self, paths)}'
 
     def get_benchid(self):
         return 'rmlint-md5'
@@ -354,7 +348,7 @@ class RmlintMD5(Rmlint):
 
 class RmlintMurmur(Rmlint):
     def get_options(self, paths):
-        return '-a murmur ' + Rmlint.get_options(self, paths)
+        return f'-a murmur {Rmlint.get_options(self, paths)}'
 
     def get_benchid(self):
         return 'rmlint-murmur'
@@ -363,7 +357,7 @@ class RmlintMurmur(Rmlint):
 class RmlintParanoid(Rmlint):
 
     def get_options(self, paths):
-        return '-p ' + Rmlint.get_options(self, paths)
+        return f'-p {Rmlint.get_options(self, paths)}'
 
     def get_benchid(self):
         return 'rmlint-paranoid'
@@ -394,10 +388,7 @@ class OldRmlint(Program):
         ).decode('utf-8')
 
         match = re.search('Version (\d.\d.\d)', str(version_text))
-        if match is not None:
-            return ' '.join(match.groups()).strip()
-
-        return ""
+        return ' '.join(match.groups()).strip() if match is not None else ""
 
     def parse_statistics(self, dump):
         dups, sets = 0, 0
@@ -429,8 +420,8 @@ class Dupd(Program):
         except OSError:
             pass
 
-        args = ' '.join(['--path ' + path for path in paths])
-        return 'scan ' + args + ' --nodb --stats-file ' + self.stats_file
+        args = ' '.join([f'--path {path}' for path in paths])
+        return f'scan {args} --nodb --stats-file {self.stats_file}'
 
     def compute_version(self):
         return subprocess.check_output(
@@ -443,8 +434,7 @@ class Dupd(Program):
         try:
             with open(self.stats_file, 'r') as fd:
                 for line in fd:
-                    line = line.strip()
-                    if line:
+                    if line := line.strip():
                         key, value = line.split(' ', 1)
                         stats[key] = value
             return {
@@ -482,8 +472,7 @@ class Rdfind(Program):
             stats = Counter()
             with open(self.result_file, 'r') as fd:
                 for line in fd:
-                    line = line.strip()
-                    if line:
+                    if line := line.strip():
                         stats[line.split()[0]] += 1
 
             return {
@@ -508,15 +497,8 @@ class Fdupes(Program):
 
     def parse_statistics(self, dump):
         dump = dump.decode('utf-8')
-        match = re.match(
-            '(\d+) duplicate files \(in (\d+) sets\)', dump
-        )
-
-        if match:
-            return {
-                'dupes': int(match.group(1)),
-                'sets': int(match.group(2))
-            }
+        if match := re.match('(\d+) duplicate files \(in (\d+) sets\)', dump):
+            return {'dupes': int(match[1]), 'sets': int(match[2])}
 
     def compute_version(self):
         return subprocess.check_output(
@@ -604,9 +586,11 @@ def do_run(programs, dataset):
         pprint.pprint(data)
 
         bench_id = program.get_benchid()
-        results['programs'][bench_id] = {}
-        results['programs'][bench_id]['version'] = program.version
-        results['programs'][bench_id]['website'] = program.get_website()
+        results['programs'][bench_id] = {
+            'version': program.version,
+            'website': program.get_website(),
+        }
+
         results['programs'][bench_id]['numbers'] = data
         results['programs'][bench_id]['memory'] = memory_usage
 
@@ -708,7 +692,7 @@ def main():
     # Do the install procedure only:
     if options.do_install:
         for program in programs:
-            print('++ Installing ' + program.get_name() + ':')
+            print(f'++ Installing {program.get_name()}:')
             program.install()
 
     # Print informative version if needed.
@@ -716,7 +700,7 @@ def main():
         current_path = os.getcwd()
         for program in programs:
             os.chdir(program.get_temp_dir())
-            print(program.get_binary() + ':', program.compute_version())
+            print(f'{program.get_binary()}:', program.compute_version())
 
         os.chdir(current_path)
 

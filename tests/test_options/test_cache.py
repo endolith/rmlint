@@ -83,7 +83,7 @@ def test_xattr_detail(extra_opts):
     with create_special_fs("this-is-not-tmpfs") as ext4_path:
         # Keep the checksum fixed, if we change the default we don't want to
         # break this test (although I'm sure some tests will break)
-        base_options = extra_opts + " -T df -S pa -a blake2b "
+        base_options = f"{extra_opts} -T df -S pa -a blake2b "
 
         path_1 = os.path.join(ext4_path, "1")
         path_2 = os.path.join(ext4_path, "2")
@@ -95,7 +95,7 @@ def test_xattr_detail(extra_opts):
         create_file("def", path_3)
         create_file("longer", path_4)
 
-        head, *data, footer = run_rmlint(base_options + ' --xattr-write')
+        head, *data, footer = run_rmlint(f'{base_options} --xattr-write')
         assert len(data) == 2
 
         xattr_1 = must_read_xattr(path_1)
@@ -110,7 +110,7 @@ def test_xattr_detail(extra_opts):
 
         # Repeating the caching option should have no effect on the output.
         for _ in range(10):
-            head, *data, footer = run_rmlint(base_options + ' --xattr')
+            head, *data, footer = run_rmlint(f'{base_options} --xattr')
             # one more due to the unique_file
             assert len(data) == 3
 
@@ -131,7 +131,7 @@ def test_xattr_detail(extra_opts):
             assert xattr_4 == {}
 
         # Try clearing the attributes:
-        head, *data, footer = run_rmlint(base_options + '--xattr-clear')
+        head, *data, footer = run_rmlint(f'{base_options}--xattr-clear')
         assert len(data) == 2
         assert must_read_xattr(path_1) == {}
         assert must_read_xattr(path_2) == {}

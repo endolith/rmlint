@@ -20,11 +20,7 @@ def _check_interpreter(interpreter):
 @with_setup(usual_setup_func, usual_teardown_func)
 def test_paranoia(interpreter):
     if not _check_interpreter(interpreter):
-        print(
-            "Interpreter {} does not seem to be working, skipping test".format(
-                interpreter
-            )
-        )
+        print(f"Interpreter {interpreter} does not seem to be working, skipping test")
         return
 
     create_file('xxx', 'a')

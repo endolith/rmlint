@@ -13,13 +13,13 @@ import subprocess
 if env['HAVE_MSGFMT']:
     for src in env.Glob('*.po'):
         lang = os.path.basename(src.get_abspath()[:-3])
-        dest = lang + '.mo'
+        dest = f'{lang}.mo'
 
         cmd = env.AlwaysBuild(
             env.Command(dest, src, 'msgfmt $SOURCE -o $TARGET')
         )
 
-        path = '$PREFIX/share/locale/%s/LC_MESSAGES/rmlint.mo' % lang
+        path = f'$PREFIX/share/locale/{lang}/LC_MESSAGES/rmlint.mo'
 
         if 'install' in COMMAND_LINE_TARGETS:
             target = env.InstallAs(path, dest)
@@ -32,25 +32,13 @@ if env['HAVE_MSGFMT']:
 
 def xgettext():
     return subprocess.call(
-        'xgettext --package-name rmlint -k_ -kN_ ' \
-        '--package-version {}.{}.{} --default-domain rmlint ' \
-        '--add-location=file ' \
-        '--join-existing ' \
-        '--output po/rmlint.pot ' \
-        '--from-code UTF-8 ' \
-        '$(find src lib -iname "*.[ch]") &&' \
-        'sed -i "s/CHARSET/UTF-8/g" po/rmlint.pot'.format(
-            VERSION_MAJOR,
-            VERSION_MINOR,
-            VERSION_PATCH
-        ),
-        shell=True
+        f'xgettext --package-name rmlint -k_ -kN_ --package-version {VERSION_MAJOR}.{VERSION_MINOR}.{VERSION_PATCH} --default-domain rmlint --add-location=file --join-existing --output po/rmlint.pot --from-code UTF-8 $(find src lib -iname "*.[ch]") &&sed -i "s/CHARSET/UTF-8/g" po/rmlint.pot',
+        shell=True,
     )
 
 
 def xgettext_action(target=None, source=None, env=None):
-    status = xgettext()
-    if status:
+    if status := xgettext():
         print('Error: xgettext failed')
         Exit(status)
 
@@ -66,19 +54,16 @@ def msgmerge(target=None, source=None, env=None):
 
 
 def msgmerge_action(target=None, source=None, env=None):
-    status = msgmerge()
-    if status:
+    if status := msgmerge():
         print('Error: msgmerge failed')
         Exit(status)
 
 
 def gettext_action(target=None, source=None, env=None):
-    status = xgettext()
-    if status:
+    if status := xgettext():
         ('Error: gettext failed while running xgettext')
         Exit(status)
-    status = msgmerge()
-    if status:
+    if status := msgmerge():
         print('Error: gettext failed while running msgmerge')
         Exit(status)
 

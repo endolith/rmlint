@@ -268,10 +268,7 @@ class Segment:
         # Cut off too long tooltips:
         if tooltip is not None:
             tooltip = GLib.markup_escape_text(tooltip, -1)
-            if len(tooltip) > 60:
-                self.tooltip = tooltip[:60] + '...'
-            else:
-                self.tooltip = tooltip
+            self.tooltip = f'{tooltip[:60]}...' if len(tooltip) > 60 else tooltip
 
     def draw(self, ctx, alloc, max_layers, bg_col):
         """Trigger the actual drawing of the segment."""
@@ -306,11 +303,7 @@ class Segment:
         mid_x, mid_y = alloc.width / 2, alloc.height / 2
 
         # Distance from (mid_x, mid_y) to middle point
-        if self.layer == 1:
-            offset = 0.75
-        else:
-            offset = 0.5
-
+        offset = 0.75 if self.layer == 1 else 0.5
         rad = ((self.layer + offset) / (max_layers + 1)) * min(mid_x, mid_y)
 
         # Half of the degree range + start
@@ -449,9 +442,11 @@ class RingChart(Chart):
             if segment.layer != self._selected_segment.layer:
                 continue
 
-            if segment is not self._selected_segment:
-                if segment.size < ANGLE_LIMIT_TOOLTIP:
-                    continue
+            if (
+                segment is not self._selected_segment
+                and segment.size < ANGLE_LIMIT_TOOLTIP
+            ):
+                continue
 
             x, y = segment.middle_point(alloc, max_layers)
             _draw_tooltip(
@@ -463,11 +458,7 @@ class RingChart(Chart):
     def on_tooltip_timeout(self, segment):
         """Called once the mouse stayed over a segment for a longer time.
         """
-        if self._timeout_id:
-            self._selected_segment = segment
-        else:
-            self._selected_segment = None
-
+        self._selected_segment = segment if self._timeout_id else None
         self.queue_draw()
         self._timeout_id = None
 
@@ -482,13 +473,7 @@ class RingChart(Chart):
         xy_abs = math.sqrt(x * x + y * y)
         cos = x / xy_abs
 
-        if y < 0:
-            # upper half
-            selected_deg = (2 * math.pi) - math.acos(cos)
-        else:
-            # lower half
-            selected_deg = math.acos(cos)
-
+        selected_deg = (2 * math.pi) - math.acos(cos) if y < 0 else math.acos(cos)
         # Check which layer we are operating on.
         selected_layer = (self.max_layers + 1) / min(mid_x, mid_y)
         selected_layer = math.floor(xy_abs * selected_layer)

@@ -7,7 +7,7 @@ import os
 
 def create_bad_link(link_name):
     link_name = os.path.join(TESTDIR_NAME, link_name)
-    fake_target = link_name + '.target'
+    fake_target = f'{link_name}.target'
     with open(fake_target, 'w') as h:
         h.write('xxx')
 

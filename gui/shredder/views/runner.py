@@ -81,7 +81,7 @@ class ResultActionBar(Gtk.ActionBar):
     def set_choice(self, choice):
         """Set the current choice. Might be one of RENDER_CHOICES"""
         if choice not in RENDER_CHOICES:
-            raise ValueError("Bad choice for button: " + choice)
+            raise ValueError(f"Bad choice for button: {choice}")
 
         self.script_type_btn.set_selected_choice(choice)
 
@@ -408,7 +408,7 @@ class RunnerView(View):
                     continue
 
                 path_to_is_original[ch.build_path()] = \
-                    NodeState.should_keep(ch[Column.TAG])
+                        NodeState.should_keep(ch[Column.TAG])
 
         self.runner.replay(path_to_is_original)
         self.app_window.views.go_right.set_sensitive(True)

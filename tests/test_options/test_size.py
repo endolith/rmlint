@@ -6,9 +6,9 @@ from tests.utils import *
 
 def create_set():
     for suffix in 'abc':
-        create_file('x' * 2048, 'big' + suffix)
-        create_file('x' * 1024, 'middle' + suffix)
-        create_file('x' * 512, 'small' + suffix)
+        create_file('x' * 2048, f'big{suffix}')
+        create_file('x' * 1024, f'middle{suffix}')
+        create_file('x' * 512, f'small{suffix}')
 
 
 @with_setup(usual_setup_func, usual_teardown_func)

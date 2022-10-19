@@ -84,7 +84,9 @@ def range_widget(settings, key_name, *_):
         settings.set_value(key_name, GLib.Variant('(tt)', (min_val, max_val)))
 
     # Bind manually:
-    settings.connect('changed::' + key_name, setting_changed)
+
+    # Bind manually:
+    settings.connect(f'changed::{key_name}', setting_changed)
     widget.connect('value-changed', widget_changed)
 
     return widget
@@ -176,9 +178,7 @@ class SettingsView(View):
 
         label = Gtk.Label()
         label.set_margin_top(30)
-        label.set_markup(
-            '<b>{}:</b>'.format(GLib.markup_escape_text(heading, -1))
-        )
+        label.set_markup(f'<b>{GLib.markup_escape_text(heading, -1)}:</b>')
         label.set_halign(Gtk.Align.START)
         label.set_margin_bottom(2)
 
@@ -260,7 +260,7 @@ class SettingsView(View):
                 continue
 
             # Get the key summary and description:
-            summary = '{}'.format(key.get_summary())
+            summary = f'{key.get_summary()}'
 
             # This is an extension of this code:
             if summary.startswith('[hidden]'):
@@ -268,7 +268,7 @@ class SettingsView(View):
 
             order, order_grep = 0, re.match(r'\[(\d+)]\s(.*)', summary)
             if order_grep is not None:
-                order, summary = int(order_grep.group(1)), order_grep.group(2)
+                order, summary = int(order_grep[1]), order_grep[2]
 
             description = key.get_description()
             if description:
@@ -289,7 +289,7 @@ class SettingsView(View):
                 (order, section, val_widget, key_name, summary, description)
             )
 
-        for section in sorted(set([entry[1] for entry in entry_rows])):
+        for section in sorted({entry[1] for entry in entry_rows}):
             self.append_section(section.capitalize())
 
         for entry in sorted(entry_rows, key=itemgetter(0, 2)):

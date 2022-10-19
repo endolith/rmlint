@@ -108,11 +108,9 @@ try:
 
     def _set_source_style(view, style_name):
         """If supported, set a color scheme by name."""
-        style = GtkSource.StyleSchemeManager.get_default().get_scheme(
+        if style := GtkSource.StyleSchemeManager.get_default().get_scheme(
             style_name
-        )
-
-        if style:
+        ):
             buffer_ = view.get_buffer()
             buffer_.set_style_scheme(style)
 
@@ -373,22 +371,20 @@ class ScriptSaverDialog(Gtk.FileChooserWidget):
     def update_file_suggestion(self):
         """Suggest a name for the script to save."""
         file_type = self.file_type.get_selected_choice() or 'sh'
-        self.set_current_name(time.strftime('rmlint-%FT%T%z.' + file_type))
+        self.set_current_name(time.strftime(f'rmlint-%FT%T%z.{file_type}'))
 
     def on_file_type_changed(self, _):
         """Called once the user chose a different format"""
-        current_path = self.get_filename()
-        if not current_path:
-            self.update_file_suggestion()
-        else:
+        if current_path := self.get_filename():
             try:
                 path, _ = current_path.rsplit('.', 1)
-                self.set_current_name(
-                    path + '.' + self.file_type.get_selected_choice() or ''
-                )
+                self.set_current_name(f'{path}.{self.file_type.get_selected_choice()}' or '')
             except ValueError:
                 # No extension. Leave it.
                 pass
+
+        else:
+            self.update_file_suggestion()
 
     def _exit_from_save(self):
         """Preparation to go back to script view."""
@@ -456,7 +452,7 @@ class OverlaySaveButton(Gtk.Overlay):
                 )
                 self._lock_button.set_permission(perm)
             except GLib.Error as err:
-                LOGGER.warning('Unable to get polkit permissions: ' + str(err))
+                LOGGER.warning(f'Unable to get polkit permissions: {str(err)}')
 
 
         self._save_button = IconButton(
@@ -637,11 +633,7 @@ class EditorView(View):
         icon_name = 'info'
 
         if self.left_stack.get_visible_child_name() == 'script':
-            if self.run_button.dry_run:
-                icon_name = 'warning'
-            else:
-                icon_name = 'danger'
-
+            icon_name = 'warning' if self.run_button.dry_run else 'danger'
         self.icon_stack.set_visible_child_name(icon_name)
 
     def set_info_review_text(self):

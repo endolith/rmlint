@@ -16,12 +16,7 @@ def create_data(len, flips=None):
 @with_setup(usual_setup_func, usual_teardown_func)
 def test_small_diffs():
 
-    if use_valgrind():
-        N = 32
-    else:
-        # Takes horribly long elsewhise
-        N = 128
-
+    N = 32 if use_valgrind() else 128
     create_file(create_data(len=N, flips=None), 'a')
     create_file(create_data(len=N, flips=[-1]), 'b')
     head, *data, footer = run_rmlint('-S a')
@@ -40,12 +35,12 @@ def test_small_diffs():
 
     assert len(data) == 2
 
-    for i in range(0, N // 2):
+    for i in range(N // 2):
         create_file(create_data(len=N, flips=[+i]), 'a')
         create_file(create_data(len=N, flips=[-i]), 'b')
         head, *data, footer = run_rmlint('-S a')
 
-        if i == N - i or i == 0:
+        if i in [N - i, 0]:
             assert len(data) == 2
         else:
             assert len(data) == 0
