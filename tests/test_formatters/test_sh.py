@@ -147,9 +147,7 @@ def test_hardlink_duplicate_directories(shell):
     create_file('xxx', 'dir_b/x')
 
     sh_path = os.path.join(TESTDIR_NAME, "result.sh")
-    header, *data, footer = run_rmlint(
-        "-D -S a -c sh:hardlink -o sh:{}".format(sh_path),
-    )
+    header, *data, footer = run_rmlint(f"-D -S a -c sh:hardlink -o sh:{sh_path}")
     data = filter_part_of_directory(data)
     assert len(data) == 2
     assert data[0]["path"].endswith("dir_a")
@@ -185,11 +183,9 @@ def test_remove_empty_dirs(shell, inverse_order):
 
     sh_path = os.path.join(TESTDIR_NAME, "result.sh")
     header, *data, footer = run_rmlint(
-        "-S {} -o sh:{}".format(
-            "A" if inverse_order else "a",
-            sh_path
-        ),
+        f'-S {"A" if inverse_order else "a"} -o sh:{sh_path}'
     )
+
 
     assert len(data) == 2
 
@@ -197,13 +193,11 @@ def test_remove_empty_dirs(shell, inverse_order):
         assert data[0]["path"].endswith("x/2")
         assert data[0]["is_original"] is True
         assert data[1]["path"].endswith("e/1")
-        assert data[1]["is_original"] is False
     else:
         assert data[0]["path"].endswith("e/1")
         assert data[0]["is_original"] is True
         assert data[1]["path"].endswith("x/2")
-        assert data[1]["is_original"] is False
-
+    assert data[1]["is_original"] is False
     _check_if_empty_dirs_deleted(shell, inverse_order, sh_path, data)
 
 
@@ -218,11 +212,9 @@ def test_remove_empty_dirs_with_dupe_dirs(shell, inverse_order):
 
     sh_path = os.path.join(TESTDIR_NAME, "result.sh")
     header, *data, footer = run_rmlint(
-        "-S {} -Dj -o sh:{}".format(
-            "A" if inverse_order else "a",
-            sh_path
-        ),
+        f'-S {"A" if inverse_order else "a"} -Dj -o sh:{sh_path}'
     )
+
     data = filter_part_of_directory(data)
 
     assert len(data) == 2
@@ -231,13 +223,11 @@ def test_remove_empty_dirs_with_dupe_dirs(shell, inverse_order):
         assert data[0]["path"].endswith("x")
         assert data[0]["is_original"] is True
         assert data[1]["path"].endswith("e")
-        assert data[1]["is_original"] is False
     else:
         assert data[0]["path"].endswith("e")
         assert data[0]["is_original"] is True
         assert data[1]["path"].endswith("x")
-        assert data[1]["is_original"] is False
-
+    assert data[1]["is_original"] is False
     _check_if_empty_dirs_deleted(shell, inverse_order, sh_path, data)
 
 @with_setup(usual_setup_func, usual_teardown_func)
@@ -251,7 +241,7 @@ def test_cleanup_emptydirs(shell):
             'let\'s nest/a level',
             'let\'s nest/a level/[or two]' ]
     for dirname in names:
-        create_file('xxx', '{}/b'.format(dirname))
+        create_file('xxx', f'{dirname}/b')
 
     head, *data, footer = run_rmlint('-S a -T df -o sh:{t}/rmlint.sh'.format(t=TESTDIR_NAME))
 

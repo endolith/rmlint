@@ -64,11 +64,7 @@ def test_order():
     assert sum(p['is_original'] for p in data) == 2
     assert len(data) == 4
 
-    if data[0]['path'].endswith('x'):
-        sym_idx, file_idx = 0, 2
-    else:
-        sym_idx, file_idx = 2, 0
-
+    sym_idx, file_idx = (0, 2) if data[0]['path'].endswith('x') else (2, 0)
     # Same symlink -> dupe
     assert data[sym_idx]['path'].endswith('x')
     assert data[sym_idx]['is_original']

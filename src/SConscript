@@ -13,16 +13,14 @@ Import('library')
 
 programs = []
 for progname in ['rmlint']:
-    print("Building " + progname)
-    program = env.Program(
-        '../' + progname, [progname + '.c', library]
-    )
+    print(f"Building {progname}")
+    program = env.Program(f'../{progname}', [f'{progname}.c', library])
 
     env.Depends(program, [library])
     programs.append(program)
 
     if 'uninstall' in COMMAND_LINE_TARGETS:
-        create_uninstall_target(env, "$PREFIX/bin/" + progname)
+        create_uninstall_target(env, f"$PREFIX/bin/{progname}")
 
 
 if 'install' in COMMAND_LINE_TARGETS:

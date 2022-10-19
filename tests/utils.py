@@ -63,13 +63,11 @@ def keep_testdir():
 
 
 def create_testdir(*extra_path):
-    try:
+    with contextlib.suppress(OSError):
         path = TESTDIR_NAME
         if extra_path:
             path = os.path.join(TESTDIR_NAME, *extra_path)
         os.makedirs(path)
-    except OSError:
-        pass
 
 
 def which(program):
@@ -79,18 +77,17 @@ def which(program):
     fpath, fname = os.path.split(program)
     if fpath and is_exe(program):
         return program
-    else:
-        for path in (os.environ.get("PATH") or []).split(os.pathsep):
-            path = path.strip('"')
-            exe_file = os.path.join(path, program)
-            if is_exe(exe_file):
-                return exe_file
+    for path in (os.environ.get("PATH") or []).split(os.pathsep):
+        path = path.strip('"')
+        exe_file = os.path.join(path, program)
+        if is_exe(exe_file):
+            return exe_file
 
     return None
 
 
 def has_feature(feature):
-    return ('+' + feature) in subprocess.check_output(
+    return f'+{feature}' in subprocess.check_output(
         ['./rmlint', '--version'], stderr=subprocess.STDOUT
     ).decode('utf-8')
 
@@ -137,9 +134,12 @@ def run_rmlint_once(*args,
 
     for idx, output in enumerate(outputs or []):
         cmd.append('-o')
-        cmd.append('{f}:{p}'.format(
-            f=output, p=os.path.join(TESTDIR_NAME, '.' + output + '-' + str(idx)))
+        cmd.append(
+            '{f}:{p}'.format(
+                f=output, p=os.path.join(TESTDIR_NAME, f'.{output}-{str(idx)}')
+            )
         )
+
 
     # filter empty strings
     cmd = list(filter(None, cmd))
@@ -175,12 +175,9 @@ def run_rmlint_once(*args,
 
     read_outputs = []
     for idx, output in enumerate(outputs or []):
-        with open(os.path.join(TESTDIR_NAME, '.' + output + '-' + str(idx)), 'r', encoding='utf8') as handle:
+        with open(os.path.join(TESTDIR_NAME, f'.{output}-{str(idx)}'), 'r', encoding='utf8') as handle:
             read_outputs.append(handle.read())
-    if outputs is None:
-        return json_data
-    else:
-        return json_data + read_outputs
+    return json_data if outputs is None else json_data + read_outputs
 
 
 def compare_json_doc(doc_a, doc_b, compare_checksum=False):
@@ -257,9 +254,7 @@ def run_rmlint_pedantic(*args, **kwargs):
         CKSUM_TYPES.append('metrocrc')
         CKSUM_TYPES.append('metrocrc256')
 
-    for cksum_type in CKSUM_TYPES:
-        options.append('--algorithm=' + cksum_type)
-
+    options.extend(f'--algorithm={cksum_type}' for cksum_type in CKSUM_TYPES)
     data = None
 
     output_len = len(kwargs.get('outputs', []))
@@ -279,10 +274,16 @@ def run_rmlint_pedantic(*args, **kwargs):
         # We cannot compare checksum in all cases.
         compare_checksum = not option.startswith('--algorithm=')
 
-        if data_skip is not None and not 'directly_return_output' in kwargs and not compare_json_docs(data_skip, new_data_skip, compare_checksum):
+        if (
+            data_skip is not None
+            and 'directly_return_output' not in kwargs
+            and not compare_json_docs(
+                data_skip, new_data_skip, compare_checksum
+            )
+        ):
             pprint.pprint(data_skip)
             pprint.pprint(new_data_skip)
-            raise AssertionError("Optimisation too optimized: " + option)
+            raise AssertionError(f"Optimisation too optimized: {option}")
 
         data = new_data
 
@@ -299,11 +300,8 @@ def run_rmlint(*args, force_no_pendantic=False, **kwargs):
 def create_dirs(path):
     full_path = os.path.join(TESTDIR_NAME, path)
 
-    try:
+    with contextlib.suppress(OSError):
         os.makedirs(full_path)
-    except OSError:
-        pass
-
     return full_path
 
 
@@ -318,21 +316,18 @@ def create_link(path, target, symlink=False):
 def create_file(data, name, mtime=None, write_binary=False):
     full_path = os.path.join(TESTDIR_NAME, name)
     if '/' in name:
-        try:
+        with contextlib.suppress(OSError):
             os.makedirs(os.path.dirname(full_path))
-        except OSError:
-            pass
-
     with open(full_path, 'wb' if write_binary else 'w') as handle:
         if write_binary:
             if isinstance(data, int):
                 handle.write(struct.pack('i', data))
             else:
-                assert False, "Unhandled data type for binary write: " + data
+                assert False, f"Unhandled data type for binary write: {data}"
         else:
             handle.write(data)
 
-    if not mtime is None:
+    if mtime is not None:
         subprocess.call(['touch', '-m', '-d', str(mtime), full_path])
 
     return full_path
@@ -351,10 +346,8 @@ def usual_setup_func():
 def usual_teardown_func():
     if not keep_testdir():
         # Allow teardown to be called more than once:
-        try:
+        with contextlib.suppress(OSError):
             shutil.rmtree(path=TESTDIR_NAME)
-        except OSError:
-            pass
 
 
 @contextlib.contextmanager
@@ -367,14 +360,15 @@ def create_special_fs(name, fs_type='ext4'):
     Returns: The path of the created directory.
     """
     mount_path = os.path.join(TESTDIR_NAME, name)
-    device_path = mount_path + ".device"
+    device_path = f"{mount_path}.device"
 
     commands = [
-        "dd if=/dev/zero of={} bs=1M count=20".format(device_path),
-        "mkdir -p {}".format(mount_path),
-        "mkfs.{} {}".format(fs_type, device_path),
-        "mount -o loop {} {}".format(device_path, mount_path),
+        f"dd if=/dev/zero of={device_path} bs=1M count=20",
+        f"mkdir -p {mount_path}",
+        f"mkfs.{fs_type} {device_path}",
+        f"mount -o loop {device_path} {mount_path}",
     ]
+
 
     for command in commands:
         subprocess.run(
@@ -390,7 +384,7 @@ def create_special_fs(name, fs_type='ext4'):
     finally:
         # whatever happens: unmount it again.
         # we'll get test errors in the next tests otherwise.
-        unmount_command = "umount {}".format(mount_path)
+        unmount_command = f"umount {mount_path}"
         subprocess.run(unmount_command, shell=True, check=True)
 
 

@@ -18,7 +18,7 @@ int main(int argc, char *argv[]) {
 
 
 def create_binary(path, stripped=False):
-    path = path + '.stripped' if stripped else path + '.nonstripped'
+    path = f'{path}.stripped' if stripped else f'{path}.nonstripped'
     full_path = os.path.join(TESTDIR_NAME, path)
 
     command = 'echo \'{src}\' | cc -o {path} {option} -std=c99 -xc -'.format(

@@ -11,11 +11,11 @@ def sha1_of_file(path):
     sha = hashlib.sha1()
     with open(path, 'rb') as f:
         while True:
-            block = f.read(2 ** 10)
-            if not block:
+            if block := f.read(2**10):
+                sha.update(block)
+            else:
                 break
 
-            sha.update(block)
         return sha.hexdigest()
 
 
@@ -27,7 +27,7 @@ if __name__ == '__main__':
     for point in data:
         dupe_groups[point['checksum']].append(point['path'])
 
-    for checksum, group in dupe_groups.items():
+    for group in dupe_groups.values():
         checksum_set = set()
         for path in group:
             sha1 = sha1_of_file(path)

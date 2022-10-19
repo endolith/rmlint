@@ -16,7 +16,7 @@ def test_stdin_read():
     path_c = create_file('1234', '.hidden') + '\n'
 
     subdir = 'look-in-here'
-    create_file('1234', subdir + '/c')
+    create_file('1234', f'{subdir}/c')
     subdir_path = os.path.join(TESTDIR_NAME, subdir)
 
     proc = subprocess.Popen(
@@ -40,7 +40,7 @@ def test_stdin_read_newlines():
     path_c = create_file('1234', '.hidden') + '\0'
 
     subdir = 'look-in-here'
-    create_file('1234', subdir + '/c')
+    create_file('1234', f'{subdir}/c')
     subdir_path = os.path.join(TESTDIR_NAME, subdir)
 
     proc = subprocess.Popen(
@@ -60,17 +60,18 @@ def test_stdin_read_newlines():
 @with_setup(usual_setup_func, usual_teardown_func)
 def test_path_starting_with_dash():
     subdir = '-look-in-here'
-    create_file('1234', subdir + '/a')
-    create_file('1234', subdir + '/b')
+    create_file('1234', f'{subdir}/a')
+    create_file('1234', f'{subdir}/b')
 
     cwd = os.getcwd()
 
     try:
         os.chdir(TESTDIR_NAME)
         data = check_output(
-            [cwd + '/rmlint', '-o', 'json', '-S', 'a', '--', subdir],
-            stderr=STDOUT
+            [f'{cwd}/rmlint', '-o', 'json', '-S', 'a', '--', subdir],
+            stderr=STDOUT,
         )
+
     finally:
         os.chdir(cwd)
 
@@ -94,10 +95,11 @@ def test_stdin_empty(stdin_opt):
     try:
         os.chdir(TESTDIR_NAME)
         proc = subprocess.Popen(
-            [cwd + '/rmlint', stdin_opt, '-o', 'json'],
+            [f'{cwd}/rmlint', stdin_opt, '-o', 'json'],
             stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE
+            stdout=subprocess.PIPE,
         )
+
         data, _ = proc.communicate("")
         head, *data, footer = json.loads(data.decode('utf-8'))
     finally:

@@ -92,16 +92,12 @@ class LocationEntry(Gtk.ListBoxRow):
 
         self.path, self.name = path, name
 
-        name_label = Gtk.Label(
-            '<b>{}</b>'.format(GLib.markup_escape_text(name))
-        )
+        name_label = Gtk.Label(f'<b>{GLib.markup_escape_text(name)}</b>')
         name_label.set_use_markup(True)
         name_label.set_hexpand(True)
         name_label.set_halign(Gtk.Align.START)
 
-        path_label = Gtk.Label(
-            '<small>{}</small>'.format(GLib.markup_escape_text(path))
-        )
+        path_label = Gtk.Label(f'<small>{GLib.markup_escape_text(path)}</small>')
         path_label.set_use_markup(True)
         path_label.set_hexpand(True)
         path_label.set_halign(Gtk.Align.START)
@@ -180,11 +176,7 @@ class LocationEntry(Gtk.ListBoxRow):
             used, total = fill_level
 
             # Watch for zero division:
-            if total > 0:
-                percent = int(used / total * 100)
-            else:
-                percent = 100
-
+            percent = int(used / total * 100) if total > 0 else 100
             level_label.set_markup(
                 '<small>{f} / {t} - {p}%</small>'.format(
                     f=size_to_human_readable(used),
@@ -226,7 +218,7 @@ def load_saved_entries():
         with open(cache_file_path(), "r") as fd:
             return json.loads(fd.read())
     except OSError as exc:
-        LOGGER.warning("Failed to get location entries: {}".format(exc))
+        LOGGER.warning(f"Failed to get location entries: {exc}")
     except Exception:
         LOGGER.exception("Failed to get location entries unexpected")
 
@@ -285,8 +277,7 @@ class LocationView(View):
             'search-changed', self.on_search_changed
         )
 
-        entries = load_saved_entries()
-        if entries:
+        if entries := load_saved_entries():
             self.load_entries_from_disk(entries)
         else:
             self.load_entries_initially()
@@ -337,7 +328,7 @@ class LocationView(View):
 
         recent_mgr = Gtk.RecentManager.get_default()
         if not recent_mgr.add_full(path, data):
-            LOGGER.warning('Could not add to recently used: ' + path)
+            LOGGER.warning(f'Could not add to recently used: {path}')
 
     def load_entries_from_disk(self, entries):
         LOGGER.info('Loading entries initially')
@@ -387,10 +378,7 @@ class LocationView(View):
                     ])
                 )
             except Exception as exc:
-                LOGGER.warning("Failed to get fs info for {}: {}".format(
-                    mount.get_name(),
-                    exc,
-                ))
+                LOGGER.warning(f"Failed to get fs info for {mount.get_name()}: {exc}")
                 continue
 
             self.add_entry(
@@ -429,7 +417,7 @@ class LocationView(View):
             return
 
         if path in self.known_paths:
-            LOGGER.info('In known paths: ' + path)
+            LOGGER.info(f'In known paths: {path}')
             return
 
         entry = LocationEntry(name, path, icon, fill_level)
@@ -448,10 +436,7 @@ class LocationView(View):
         return entry
 
     def cache_saved_entries(self):
-        entries = []
-        for child in self.box.get_children():
-            entries.append(child.to_dict())
-
+        entries = [child.to_dict() for child in self.box.get_children()]
         store_saved_entries(entries)
 
     def on_row_clicked(self, _, row):
@@ -488,10 +473,7 @@ class LocationView(View):
     def _filter_func(self, row):
         """Decide if a row should be visible depending on the search term."""
         query = self.search_entry.get_text().lower()
-        if query in row.path.lower():
-            return True
-
-        return query in row.name.lower()
+        return True if query in row.path.lower() else query in row.name.lower()
 
     def on_view_enter(self):
         """Called when the view gets visible."""
@@ -586,15 +568,15 @@ class LocationView(View):
 
     def scan_paths(self, untagged, tagged):
         """Actually go to the main view and trigger scan."""
-        main_view = self.app_window.views['runner']
         if tagged or untagged:
+            main_view = self.app_window.views['runner']
             main_view.trigger_run(untagged, tagged)
             self.app_window.views.switch('runner')
 
     def _del_clicked(self, _):
         """Delete all selected LocationEntries."""
         for row in self.selected_locations:
-            LOGGER.debug('Removing location entry:' + row.path)
+            LOGGER.debug(f'Removing location entry:{row.path}')
             self.box.remove(row)
 
             try:

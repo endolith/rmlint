@@ -21,10 +21,10 @@ def run_tests(target=None, source=None, env=None):
     exes = [exe for exe in names if cmd_exists(exe)]
     if any(exes):
         name = exes[0]
-        print('Found nosetests as "{}"'.format(name))
-        Exit(subprocess.call(name + ' -s -v -a !slow', shell=True))
+        print(f'Found nosetests as "{name}"')
+        Exit(subprocess.call(f'{name} -s -v -a !slow', shell=True))
 
-    print('Unable to find nosetests, tried these: ' + str(names))
+    print(f'Unable to find nosetests, tried these: {names}')
     Exit(-1)
 
 

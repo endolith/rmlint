@@ -23,5 +23,7 @@ def test_collision_resistance():
 
     for algo in CKSUM_TYPES:
         if algo not in BLACKLIST:
-            *_, footer = run_rmlint('--read-buffer-len=4 -a {}'.format(algo))
-            assert footer['duplicates'] == 0, 'Unexpected hash collision for hash type {}'.format(algo)
+            *_, footer = run_rmlint(f'--read-buffer-len=4 -a {algo}')
+            assert (
+                footer['duplicates'] == 0
+            ), f'Unexpected hash collision for hash type {algo}'

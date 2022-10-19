@@ -90,13 +90,11 @@ class Query:
         if not check_numeric(self.sizes, size):
             return False
 
-        if not check_numeric(self.mtimes, mtime):
-            return False
-
-        if not check_numeric(self.amounts, count):
-            return False
-
-        return True
+        return (
+            bool(check_numeric(self.amounts, count))
+            if check_numeric(self.mtimes, mtime)
+            else False
+        )
 
 
 def parse_generic_range(value, converter):
@@ -210,8 +208,7 @@ def parse(query):
             LOGGER.warning('Invalid parser: %s', parser)
             continue
 
-        parsed_value = parser(value)
-        if parsed_value:
+        if parsed_value := parser(value):
             results[attr].extend(parsed_value)
 
     indices.append(-1)
@@ -221,8 +218,7 @@ def parse(query):
     query += ' '
 
     for cnt, idx in enumerate(indices[::2]):
-        part = query[idx:indices[2 * cnt+1]].strip()
-        if part:
+        if part := query[idx : indices[2 * cnt + 1]].strip():
             parts.append(part)
 
     results['name'] = ' '.join(parts).strip().lower()
@@ -236,4 +232,4 @@ def parse(query):
 if __name__ == '__main__':
     import sys
 
-    print('`{}`'.format(parse(sys.argv[1])))
+    print(f'`{parse(sys.argv[1])}`')

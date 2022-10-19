@@ -25,12 +25,11 @@ def get_prefix():
             return os.path.expanduser('~/.local')
 
         if arg.startswith('--prefix'):
-            if '=' in arg:
-                _, path = arg.split('=', 1)
-                return path
-            else:
+            if '=' not in arg:
                 return sys.argv[idx + 1]
 
+            _, path = arg.split('=', 1)
+            return path
     return '/usr'
 
 

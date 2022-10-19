@@ -527,7 +527,7 @@ class Script(GObject.Object):
 
         line_split = line.split(':', maxsplit=1)
         if len(line_split) < 2:
-            LOGGER.warning('Invalid line fed: ' + line)
+            LOGGER.warning(f'Invalid line fed: {line}')
             return
 
         prefix, path = line_split

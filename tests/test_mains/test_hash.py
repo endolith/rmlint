@@ -25,8 +25,8 @@ def streaming_compliance_check(patterns):
         for increment in INCREMENTS[1:]:
             command = cmd.format(increment=increment, algo=algo, path=a)
             output = subprocess.check_output(command.split())
-            if(output!=output0):
-                assert False, "{} fails streaming test with increment {}".format(algo, increment)
+            if (output!=output0):
+                assert False, f"{algo} fails streaming test with increment {increment}"
                 break
 
 @parameterized([

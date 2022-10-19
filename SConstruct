@@ -43,7 +43,7 @@ def check_gcc_version(context):
             v = int(v)
             context.Result(str(v))
         except ValueError:
-            print('Expected a number, but got: ' + v)
+            print(f'Expected a number, but got: {v}')
             v = 0
     except subprocess.CalledProcessError:
         print('Unable to find GCC version.')
@@ -58,7 +58,7 @@ def check_gcc_version(context):
 
 def check_pkgconfig(context, version):
     context.Message('Checking for pkg-config... ')
-    command = pkg_config + ' --atleast-pkgconfig-version=' + version
+    command = f'{pkg_config} --atleast-pkgconfig-version={version}'
     ret = context.TryAction(command)[0]
     context.Result(ret)
     return ret
@@ -68,19 +68,19 @@ def check_pkg(context, name, varname, required=True):
     rc, text = 1, ''
 
     try:
-        if GetOption('with_' + name.split()[0]) is False:
-            context.Message('Explicitly disabling %s...' % name)
+        if GetOption(f'with_{name.split()[0]}') is False:
+            context.Message(f'Explicitly disabling {name}...')
             rc = 0
     except AttributeError:
         pass
 
     if rc != 0:
-        context.Message('Checking for %s... ' % name)
+        context.Message(f'Checking for {name}... ')
         rc, text = context.TryAction('%s --exists \'%s\'' % (pkg_config, name))
 
     # 0 is defined as error by TryAction
     if rc == 0 and required:
-        print('Error: ' + name + ' not found.')
+        print(f'Error: {name} not found.')
         Exit(1)
 
     # Remember we have it:
@@ -123,11 +123,7 @@ def check_sysmacro_h(context):
 
 
 def check_libelf(context):
-    rc = 1
-
-    if GetOption('with_libelf') is False:
-        rc = 0
-
+    rc = 0 if GetOption('with_libelf') is False else 1
     if rc and tests.CheckHeader(context, 'libelf.h', header="#include <stdlib.h>"):
         rc = 0
 
@@ -155,11 +151,7 @@ def check_uname(context):
 
 
 def check_gettext(context):
-    rc = 1
-
-    if GetOption('with_gettext') is False:
-        rc = 0
-
+    rc = 0 if GetOption('with_gettext') is False else 1
     if rc and tests.CheckHeader(context, 'locale.h'):
         rc = 0
 
@@ -173,11 +165,7 @@ def check_gettext(context):
 
 
 def check_fiemap(context):
-    rc = 1
-
-    if GetOption('with_fiemap') is False:
-        rc = 0
-
+    rc = 0 if GetOption('with_fiemap') is False else 1
     if rc and tests.CheckType(context, 'struct fiemap', header='#include <linux/fiemap.h>\n'):
         rc = 0
 
@@ -189,21 +177,20 @@ def check_fiemap(context):
 
 
 def check_bigfiles(context):
-    off_t_is_big_enough = True
+    off_t_is_big_enough = (
+        tests.CheckTypeSize(
+            context, 'off_t', header='#include <sys/types.h>\n'
+        )
+        >= 8
+    )
 
-    if tests.CheckTypeSize(context, 'off_t', header='#include <sys/types.h>\n') < 8:
-        off_t_is_big_enough = False
-
-    have_stat64 = True
-    if tests.CheckFunc(
-        context, 'stat64',
-        header=
-            '#include <sys/types.h>'
-            '#include <sys/stat.h>'
-            '#include <unistd.h>'
-
-    ):
-        have_stat64 = False
+    have_stat64 = not tests.CheckFunc(
+        context,
+        'stat64',
+        header='#include <sys/types.h>'
+        '#include <sys/stat.h>'
+        '#include <unistd.h>',
+    )
 
     rc = int(off_t_is_big_enough or have_stat64)
     conf.env['HAVE_BIG_OFF_T'] = int(off_t_is_big_enough)
@@ -216,11 +203,7 @@ def check_bigfiles(context):
 
 
 def check_blkid(context):
-    rc = 1
-
-    if GetOption('with_blkid') is False:
-        rc = 0
-
+    rc = 0 if GetOption('with_blkid') is False else 1
     if rc == 1 and tests.CheckDeclaration(
         context,
         symbol='blkid_devno_to_wholedisk',
@@ -236,12 +219,8 @@ def check_blkid(context):
 
 
 def check_sys_block(context):
-    rc = 1
-
     context.Message('Checking for existence of /sys/block... ')
-    if not os.access('/sys/block', os.R_OK):
-        rc = 0
-
+    rc = 1 if os.access('/sys/block', os.R_OK) else 0
     conf.env['HAVE_SYSBLOCK'] = rc
 
     context.Result(rc)
@@ -265,17 +244,18 @@ def check_posix_fadvise(context):
 
 
 def check_xattr(context):
-    rc = 1
-
-    for func in ['getxattr', 'setxattr', 'removexattr', 'listxattr']:
-        if tests.CheckFunc(
-            context, func,
-            header=
-                '#include <sys/types.h>'
-                '#include <sys/xattr.h>'
-        ):
-            rc = 0
-            break
+    rc = next(
+        (
+            0
+            for func in ['getxattr', 'setxattr', 'removexattr', 'listxattr']
+            if tests.CheckFunc(
+                context,
+                func,
+                header='#include <sys/types.h>' '#include <sys/xattr.h>',
+            )
+        ),
+        1,
+    )
 
     conf.env['HAVE_XATTR'] = rc
 
@@ -286,17 +266,23 @@ def check_xattr(context):
 
 
 def check_lxattr(context):
-    rc = 1
-
-    for func in ['lgetxattr', 'lsetxattr', 'lremovexattr', 'llistxattr']:
-        if tests.CheckFunc(
-            context, func,
-            header=
-                '#include <sys/types.h>'
-                '#include <sys/xattr.h>'
-        ):
-            rc = 0
-            break
+    rc = next(
+        (
+            0
+            for func in [
+                'lgetxattr',
+                'lsetxattr',
+                'lremovexattr',
+                'llistxattr',
+            ]
+            if tests.CheckFunc(
+                context,
+                func,
+                header='#include <sys/types.h>' '#include <sys/xattr.h>',
+            )
+        ),
+        1,
+    )
 
     conf.env['HAVE_LXATTR'] = rc
 
@@ -349,20 +335,14 @@ def check_btrfs_h(context):
     return rc
 
 def check_linux_fs_h(context):
-    rc = 1
-    if tests.CheckHeader(context, 'linux/fs.h'):
-        rc = 0
-
+    rc = 0 if tests.CheckHeader(context, 'linux/fs.h') else 1
     conf.env['HAVE_LINUX_FS_H'] = rc
     context.did_show_result = True
     context.Result(rc)
     return rc
 
 def check_linux_limits(context):
-    rc = 1
-    if tests.CheckHeader(context, 'linux/limits.h'):
-        rc = 0
-
+    rc = 0 if tests.CheckHeader(context, 'linux/limits.h') else 1
     conf.env['HAVE_LINUX_LIMITS'] = rc
     context.did_show_result = True
     context.Result(rc)
@@ -410,10 +390,15 @@ def check_builtin_cpu_supports(context):
 
 
 def create_uninstall_target(env, path):
-    env.Command("uninstall-" + path, path, [
-        Delete("$SOURCE"),
-    ])
-    env.Alias("uninstall", "uninstall-" + path)
+    env.Command(
+        f"uninstall-{path}",
+        path,
+        [
+            Delete("$SOURCE"),
+        ],
+    )
+
+    env.Alias("uninstall", f"uninstall-{path}")
 
 
 Export('create_uninstall_target')
@@ -427,9 +412,7 @@ def find_sphinx_binary():
 
     def version_key(binary):
         splitted = binary.rsplit('-', 1)
-        if len(splitted) < 3:
-            return 0
-        return float(splitted[-1])
+        return 0 if len(splitted) < 3 else float(splitted[-1])
 
     binaries = sorted(binaries, key=version_key, reverse=True)
     if binaries:

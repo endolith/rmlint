@@ -35,7 +35,7 @@ def create_set(create_stamp, iso8601=False):
 def test_simple():
     create_set(False)
     now = time.time()
-    head, *data, footer = run_rmlint_once('-S a -N ' + str(time.time()))
+    head, *data, footer = run_rmlint_once(f'-S a -N {str(time.time())}')
     assert len(data) == 3
 
     # Fake a wait of two seconds a try an ISO8601.
@@ -46,7 +46,7 @@ def test_simple():
             time.gmtime(now + offset)
         )
 
-        head, *data, footer = run_rmlint_once('-S a -N ' + iso_time)
+        head, *data, footer = run_rmlint_once(f'-S a -N {iso_time}')
         assert len(data) == expect
 
 

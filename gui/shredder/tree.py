@@ -70,10 +70,7 @@ class Column:
         """Convert an rmlint json dict to a tree row"""
         is_original = md_map.get('is_original', False)
         if md_map.get('type', '').startswith('duplicate_'):
-            if is_original:
-                tag = NodeState.ORIGINAL
-            else:
-                tag = NodeState.DUPLICATE
+            tag = NodeState.ORIGINAL if is_original else NodeState.DUPLICATE
         else:
             tag = NodeState.NONE
 
@@ -245,10 +242,7 @@ class PathTrie(GObject.Object):
 
     def __repr__(self):
         """Return a simple string version of the trie"""
-        view = []
-        for node in self:
-            view.append((' ' * node.depth * 2) + node.name)
-
+        view = [(' ' * node.depth * 2) + node.name for node in self]
         return '\n'.join(view)
 
     def __getitem__(self, path):
@@ -369,11 +363,7 @@ class PathTrie(GObject.Object):
         This might be different from nodes that are inserted as sub root nodes,
         or as intermediate directories.
         """
-        for node in self:
-            if node.is_leaf:
-                return True
-
-        return False
+        return any(node.is_leaf for node in self)
 
 
 def make_iter(node):
@@ -628,10 +618,7 @@ class PathTreeModel(GObject.GObject, Gtk.TreeModel, Gtk.TreeSortable):
         """
         node = self.trie.resolve(path.get_indices())
 
-        if node is not None:
-            return (True, make_iter(node))
-        else:
-            return (False, None)
+        return (True, make_iter(node)) if node is not None else (False, None)
 
     def _iter_move(self, iter_, offset):
         """Move iter_ by a certain offset."""
@@ -640,9 +627,8 @@ class PathTreeModel(GObject.GObject, Gtk.TreeModel, Gtk.TreeSortable):
 
         if next_node is None:
             return (False, None)
-        else:
-            iter_.user_data = id(next_node)
-            return (True, iter_)
+        iter_.user_data = id(next_node)
+        return (True, iter_)
 
     def do_iter_next(self, iter_):
         """Returns an iter pointing to the next row or None.
@@ -661,10 +647,7 @@ class PathTreeModel(GObject.GObject, Gtk.TreeModel, Gtk.TreeSortable):
     def do_iter_parent(self, child_iter):
         """Returns an iter pointing to the parent of child_iter or None."""
         node = self.trie.nodes[child_iter.user_data]
-        if node.parent:
-            return (True, make_iter(node.parent))
-        else:
-            return (False, None)
+        return (True, make_iter(node.parent)) if node.parent else (False, None)
 
     def do_iter_has_child(self, iter_):
         """True if iter has children."""
@@ -672,10 +655,7 @@ class PathTreeModel(GObject.GObject, Gtk.TreeModel, Gtk.TreeSortable):
 
     def do_iter_n_children(self, iter_):
         """Returns the number of children of iter_"""
-        if iter_ is None:
-            return 0
-        else:
-            return len(self.trie.nodes[iter_.user_data].children)
+        return 0 if iter_ is None else len(self.trie.nodes[iter_.user_data].children)
 
     def do_iter_children(self, parent):
         """Return first child or (False|None)"""
@@ -735,12 +715,10 @@ class PathTreeModel(GObject.GObject, Gtk.TreeModel, Gtk.TreeSortable):
         """Return the column the model is sorted by.
         Returns (True if sorted, columnd id, order)
         """
-        # Assume no initial sort order.
-        if self._sort_last_id is None:
-            id_ = Gtk.TREE_SORTABLE_UNSORTED_SORT_COLUMN_ID
-            return (False, id_, self._sort_last_order)
-        else:
+        if self._sort_last_id is not None:
             return (True, self._sort_last_id, self._sort_last_order)
+        id_ = Gtk.TREE_SORTABLE_UNSORTED_SORT_COLUMN_ID
+        return (False, id_, self._sort_last_order)
 
     def do_set_sort_column_id(self, id_, order):
         """Sort this model by the values in the column `id_` by `order`.
@@ -761,11 +739,11 @@ class PathTreeModel(GObject.GObject, Gtk.TreeModel, Gtk.TreeSortable):
         # Do the actual sort:
         reverse = order is Gtk.SortType.DESCENDING
         for node, old_ind in self.trie.sort(id_, reverse):
-            indices = node.build_iter_path()
-            path = Gtk.TreePath.new_from_indices(indices)
-
             # Update the treeview:
             if old_ind:
+                indices = node.build_iter_path()
+                path = Gtk.TreePath.new_from_indices(indices)
+
                 self.rows_reordered(path, make_iter(node), old_ind)
 
     def do_set_sort_func(self, id_, func):
@@ -867,8 +845,7 @@ class PathTreeView(Gtk.TreeView):
         """Extra convenience method for getting the currently selected nodes"""
         model, rows = self.get_selection().get_selected_rows()
         for tp_path in rows:
-            node = model.trie.resolve(tp_path.get_indices())
-            yield node
+            yield model.trie.resolve(tp_path.get_indices())
 
     def get_selected_node(self):
         """Return the first selected node or None."""
@@ -882,8 +859,7 @@ class PathTreeView(Gtk.TreeView):
         if event.button != 3:
             return
 
-        menu = self.on_show_menu()
-        if menu:
+        if menu := self.on_show_menu():
             menu.simple_popup(event)
 
     #######################
@@ -964,12 +940,9 @@ class PathTreeView(Gtk.TreeView):
             if not group:
                 continue
 
-            # List of PathNodes which are twins:
-            has_original = False
-            for twin_node in group:
-                if twin_node[Column.TAG] is NodeState.ORIGINAL:
-                    has_original = True
-                    break
+            has_original = any(
+                twin_node[Column.TAG] is NodeState.ORIGINAL for twin_node in group
+            )
 
             # All good:
             if has_original:

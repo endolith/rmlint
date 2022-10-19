@@ -26,12 +26,13 @@ def path_depth(file_path):
 # dispatcher for comparison tests
 def validate_order(data, tests):
     testfuncs = {
-        's': lambda g: sum([p['size'] for p in g]),
+        's': lambda g: sum(p['size'] for p in g),
         'a': lambda g: os.path.basename(g[0]['path']).lower(),
         'm': lambda g: g[0]['mtime'],
         'p': lambda g: path_index(g[0]['path']),
-        'n': lambda g: len(g)
+        'n': lambda g: len(g),
     }
+
 
     groups, group = [], []
     for point in data:
@@ -88,7 +89,7 @@ def test_replay_match_basename():
     ))
 
     assert len(data) == 2
-    paths = set([p['path'] for p in data])
+    paths = {p['path'] for p in data}
     assert os.path.join(TESTDIR_NAME, 'test1/a') in paths
     assert os.path.join(TESTDIR_NAME, 'test2/a') in paths
 
@@ -144,7 +145,7 @@ def test_replay_must_match_tagged():
         b=os.path.join(TESTDIR_NAME, 'test_b')
     ))
 
-    paths = set([(p['path'], p['is_original']) for p in data])
+    paths = {(p['path'], p['is_original']) for p in data}
     assert (os.path.join(TESTDIR_NAME, 'test_b/a'), False) in paths
     assert (os.path.join(TESTDIR_NAME, 'test_a/a'), True) in paths
 
@@ -153,18 +154,18 @@ def test_replay_must_match_tagged():
 @with_setup(usual_setup_func, usual_teardown_func)
 def test_sorting():
     # create some dupes with different PATHS, names and mtimes:
-    create_file('xxx', PATHS[0] + 'a')
-    create_file('xxx', PATHS[1] + 'bb')
-    create_file('xxx', PATHS[2] + 'ccc')
+    create_file('xxx', f'{PATHS[0]}a')
+    create_file('xxx', f'{PATHS[1]}bb')
+    create_file('xxx', f'{PATHS[2]}ccc')
 
     # Make sure it takes some time to re-reun
     time.sleep(1.25)
-    create_file('xxxx', PATHS[0] + 'A')
-    create_file('xxxx', PATHS[1] + 'B')
-    create_file('xxxx', PATHS[2] + 'C')
-    create_file('xxxx', PATHS[2] + 'D')
+    create_file('xxxx', f'{PATHS[0]}A')
+    create_file('xxxx', f'{PATHS[1]}B')
+    create_file('xxxx', f'{PATHS[2]}C')
+    create_file('xxxx', f'{PATHS[2]}D')
 
-    joiner = ' ' + TESTDIR_NAME + '/'
+    joiner = f' {TESTDIR_NAME}/'
     search_paths = joiner + joiner.join(PATHS)
 
     # Leave out 'o' for now, since its not really worth testing.
@@ -185,7 +186,7 @@ def test_sorting():
     replay_path = '/tmp/replay.json'
 
     for combo in combos:
-        combo_str = '-y ' + combo
+        combo_str = f'-y {combo}'
         head, *data, footer = run_rmlint(
             combo_str + search_paths, '-o json:{p}'.format(p=replay_path),
             use_default_dir=False
@@ -195,9 +196,11 @@ def test_sorting():
         validate_order(data, combo)
 
         head, *data, footer = run_rmlint(
-            combo_str + search_paths, ' --replay ' + replay_path,
-            use_default_dir=False
+            combo_str + search_paths,
+            f' --replay {replay_path}',
+            use_default_dir=False,
         )
+
 
         assert len(data) == 7
 
@@ -226,9 +229,9 @@ def test_replay_no_dir():
         assert len(data) == 3
 
         head, *data, footer = run_rmlint(
-                '--replay {}'.format(replay_path),
-                use_default_dir=False,
+            f'--replay {replay_path}', use_default_dir=False
         )
+
         assert len(data) == 3
     finally:
         os.chdir(current_cwd)
@@ -246,11 +249,11 @@ def test_replay_unicode_fuckup():
 
     head, *data, footer = run_rmlint('-o json:{p}'.format(p=replay_path))
     assert len(data) == 3
-    assert set([os.path.basename(e['path']) for e in data]) == set(names)
+    assert {os.path.basename(e['path']) for e in data} == set(names)
 
     head, *data, footer = run_rmlint('--replay {p}'.format(p=replay_path))
     assert len(data) == 3
-    assert set([os.path.basename(e['path']) for e in data]) == set(names)
+    assert {os.path.basename(e['path']) for e in data} == set(names)
 
 
 @with_setup(usual_setup_func, usual_teardown_func)
@@ -265,9 +268,10 @@ def test_replay_tagged_order():
 
     # Create replay-a.json
     head, *data, footer = run_rmlint(
-        '-S a {r} -o json:{p}'.format(r=TESTDIR_NAME + '/a', p=replay_path_a),
-        use_default_dir=False
+        '-S a {r} -o json:{p}'.format(r=f'{TESTDIR_NAME}/a', p=replay_path_a),
+        use_default_dir=False,
     )
+
 
     assert len(data) == 2
     assert data[0]['path'].endswith('a/1')
@@ -275,9 +279,10 @@ def test_replay_tagged_order():
 
     # Create replay-b.json
     head, *data, footer = run_rmlint(
-        '{r} -o json:{p}'.format(r=TESTDIR_NAME + '/b', p=replay_path_b),
-        use_default_dir=False
+        '{r} -o json:{p}'.format(r=f'{TESTDIR_NAME}/b', p=replay_path_b),
+        use_default_dir=False,
     )
+
 
     assert len(data) == 2
     assert data[0]['path'].endswith('b/1')

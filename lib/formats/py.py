@@ -86,9 +86,11 @@ def handle_duplicate_dir(path, original, **kwargs):
 
 
 def handle_duplicate_file(path, original, args, **kwargs):
-    if original_check(path, original['path'], be_paranoid=args.paranoid):
-        if not args.dry_run:
-            os.remove(path)
+    if (
+        original_check(path, original['path'], be_paranoid=args.paranoid)
+        and not args.dry_run
+    ):
+        os.remove(path)
 
 
 def handle_unique_file(path, **kwargs):
@@ -256,7 +258,7 @@ if __name__ == '__main__':
             print(err, file=sys.stderr)
             sys.exit(-1)
         except ValueError as err:   # File is not valid JSON
-            print('{}: {}'.format(err, json_file), file=sys.stderr)
+            print(f'{err}: {json_file}', file=sys.stderr)
             sys.exit(-1)
 
     try:

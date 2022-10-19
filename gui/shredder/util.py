@@ -414,10 +414,7 @@ class CellRendererSize(Gtk.CellRendererText):
 
 def _rnd(num):
     """Round to minimal decimal places & convert to str"""
-    if round(num, 1) % 1:
-        return str(round(num, 1))
-    else:
-        return str(int(num))
+    return str(round(num, 1)) if round(num, 1) % 1 else str(int(num))
 
 
 def pretty_seconds(second_diff):
@@ -425,15 +422,15 @@ def pretty_seconds(second_diff):
     if second_diff < 10:
         return "just now"
     elif second_diff < 60:
-        return _rnd(second_diff) + " seconds ago"
+        return f"{_rnd(second_diff)} seconds ago"
     elif second_diff < 120:
         return "a minute ago"
     elif second_diff < 3600:
-        return _rnd(second_diff / 60) + " minutes ago"
+        return f"{_rnd(second_diff / 60)} minutes ago"
     elif second_diff < 7200:
         return "an hour ago"
     elif second_diff < 86400:
-        return _rnd(second_diff / 3600) + " hours ago"
+        return f"{_rnd(second_diff / 3600)} hours ago"
 
 
 def pretty_date(time=False):
@@ -450,13 +447,13 @@ def pretty_date(time=False):
     elif day_diff == 1:
         return "Yesterday"
     elif day_diff < 7:
-        return _rnd(day_diff) + " days ago"
+        return f"{_rnd(day_diff)} days ago"
     elif day_diff < 31:
-        return _rnd(day_diff / 7) + " weeks ago"
+        return f"{_rnd(day_diff / 7)} weeks ago"
     elif day_diff < 365:
-        return _rnd(day_diff / 30) + " months ago"
+        return f"{_rnd(day_diff / 30)} months ago"
 
-    return _rnd(day_diff / 365) + " years ago"
+    return f"{_rnd(day_diff / 365)} years ago"
 
 
 class CellRendererModifiedTime(Gtk.CellRendererText):
@@ -503,10 +500,10 @@ class CellRendererCount(Gtk.CellRendererText):
 
         if count > 0:
             name = 'Objects' if is_plural else 'Object'
-            text = '{} {}'.format(count, name)
+            text = f'{count} {name}'
         elif count < 0:
             name = 'Twins' if is_plural else 'Twin'
-            text = '{} {}'.format(-count, name)
+            text = f'{-count} {name}'
         else:
             text = ''
 
@@ -604,11 +601,7 @@ class ChoiceRow(Gtk.ListBoxRow):
         self.symbol.props.margin_start = 10
         self.symbol.set_no_show_all(True)
 
-        if capitalize:
-            display_value = value.capitalize()
-        else:
-            display_value = value
-
+        display_value = value.capitalize() if capitalize else value
         label = Gtk.Label(display_value)
         label.props.xalign = 0
 
@@ -738,9 +731,8 @@ class MultipleChoiceButton(Gtk.Button):
     def set_selected_choice(self, value):
         """Set the choice of the widget by name"""
         for row in self.listbox:
-            if isinstance(row, ChoiceRow):
-                if row.value == value:
-                    self._set_current_row(row)
+            if isinstance(row, ChoiceRow) and row.value == value:
+                self._set_current_row(row)
 
     def on_update_value(self, _, row, popover):
         """Called on a click on a row. Will hide the popover."""
@@ -808,11 +800,7 @@ class FileSizeSpinButton(Gtk.Box):
     def set_bytes(self, size):
         """Set the current number of displayed bytes"""
         # Find out what unit to use:
-        if size == 0:
-            exponent = 1
-        else:
-            exponent = math.floor(math.log(size, 1024))
-
+        exponent = 1 if size == 0 else math.floor(math.log(size, 1024))
         # Convert raw size to a factor
         display_size = size / (1024 ** exponent)
 
